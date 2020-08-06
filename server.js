@@ -11,12 +11,16 @@ var app = express();
 app.use(bodyParser.json())
 
 const saltRounds = 10;
+const algorithm = 'aes-256-cbc';
+const key = crypto.randomBytes(256/8).toString('hex');
+const IV_LENGTH = 16;
 
-async function encrypt(data){
-  var mykey = crypto.createCipher('aes-128-cbc', 'secretkey');
-  var mystr = mykey.update(JSON.stringify(data), 'utf8', 'hex')
-  mystr += mykey.final('hex');
-  return mystr
+function encrypt(data) {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(algorithm, Buffer.from(key, 'hex'), iv);
+  let encrypted = cipher.update(data);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return `${iv.toString('hex')}:${encrypted.toString('hex')}`;
 }
 
 app.post('/private/register',async(req,res)=>{
